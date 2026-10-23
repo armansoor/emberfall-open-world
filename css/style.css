@@ -1,0 +1,60 @@
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0e1a;color:#f5f0e6;font-family:Georgia,'Times New Roman',serif;-webkit-tap-highlight-color:transparent}
+#game-wrap{position:relative;width:100%;max-width:1100px;margin:0 auto;height:100dvh;max-height:100dvh;overflow:hidden;background:#111}
+canvas#game{width:100%;height:100%;display:block;background:#2d5a27;touch-action:none}
+#minimap{position:absolute;top:86px;right:10px;width:132px;height:99px;border:2px solid rgba(255,255,255,.55);border-radius:8px;background:#000;z-index:5}
+.hidden{display:none!important}
+.screen{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:28px 18px;overflow-y:auto;background:radial-gradient(ellipse at 50% 30%,#3a2410 0%,#170f08 60%,#0b0705 100%);text-align:center}
+.screen.modal{background:rgba(8,6,4,.88);justify-content:center}
+.logo{font-size:clamp(38px,9vw,72px);letter-spacing:3px;color:#ffb347;text-shadow:0 0 24px #ff6a00,0 3px 0 #7a2d00;margin-top:6vh}
+.tagline{opacity:.85;font-style:italic}
+.credit-line{margin-top:auto;font-size:13px;opacity:.7}
+h2{color:#ffb347;font-size:clamp(24px,5vw,36px)}
+.big-btn{display:block;min-width:min(320px,86vw);padding:13px 22px;font-size:18px;font-family:inherit;font-weight:bold;color:#241203;background:linear-gradient(#ffcf6e,#f39c12);border:2px solid #7a2d00;border-radius:12px;cursor:pointer}
+.big-btn:hover{filter:brightness(1.1)} .big-btn.secondary{background:linear-gradient(#5d6d7e,#34495e);color:#fff;border-color:#1a252f}
+.mini-btn{padding:5px 10px;border-radius:8px;border:1px solid #888;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:13px}
+.field{font-weight:bold;color:#ffcf6e;margin-top:8px}
+input#cc-name{padding:11px;font-size:17px;border-radius:9px;border:2px solid #f39c12;background:#1c150c;color:#fff;text-align:center;width:min(320px,86vw)}
+.card-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:760px}
+.choice-card{width:200px;padding:13px;border-radius:12px;border:3px solid #555;background:#221a10;color:#f5f0e6;cursor:pointer;display:flex;flex-direction:column;gap:5px;align-items:center;font-family:inherit}
+.choice-card small{opacity:.85;line-height:1.35}.choice-card.small{width:150px}
+.choice-card.selected{border-color:#ffb347;box-shadow:0 0 14px rgba(255,150,0,.6)}
+.cc-emoji{font-size:32px}
+.swatch{width:44px;height:44px;border-radius:50%;border:3px solid #555;cursor:pointer}
+.swatch.selected{border-color:#ffb347;box-shadow:0 0 12px rgba(255,180,0,.85)}
+.row-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.panel-text{max-width:620px;line-height:1.65;background:rgba(255,255,255,.06);border:1px solid rgba(255,200,100,.35);border-radius:12px;padding:18px;text-align:left}
+.panel-text.story{font-size:17px;text-align:center}
+#hud{position:absolute;inset:0;pointer-events:none;z-index:6}
+#hud button{pointer-events:auto}
+.hud-left{position:absolute;top:10px;left:10px;width:min(250px,52vw)}
+#hud-name{font-weight:bold;text-shadow:0 1px 3px #000;margin-bottom:4px}
+.bar{position:relative;height:17px;background:rgba(0,0,0,.65);border:1px solid #fff3;border-radius:6px;margin:3px 0;overflow:hidden}
+.bar>div{height:100%;transition:width .18s}
+.bar span{position:absolute;inset:0;font-size:11px;text-align:center;line-height:17px;color:#fff;text-shadow:0 1px 2px #000}
+.bar.hp>div{background:#c0392b}.bar.mp>div{background:#2471a3}.bar.xp{height:11px}.bar.xp>div{background:#b7950b}.bar.xp span{line-height:11px;font-size:9px}
+.hud-right{position:absolute;top:10px;right:10px;text-align:right;font-weight:bold;text-shadow:0 1px 3px #000;display:flex;flex-direction:column;gap:3px}
+#quest-tracker{position:absolute;left:10px;bottom:12px;max-width:min(330px,72vw);background:rgba(0,0,0,.55);border:1px solid rgba(255,200,100,.4);border-radius:9px;padding:8px 11px;font-size:13px;line-height:1.5}
+.hud-buttons{position:absolute;right:10px;bottom:12px;display:flex;gap:6px}
+#toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);z-index:15;background:rgba(20,14,4,.92);border:2px solid #ffb347;color:#ffe9b0;padding:11px 20px;border-radius:11px;font-size:16px;max-width:88vw;text-align:center}
+#interact-prompt{position:absolute;bottom:19%;left:50%;transform:translateX(-50%);z-index:8;background:rgba(0,0,0,.7);padding:7px 14px;border-radius:8px}
+.dialogue{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;width:min(680px,94vw);z-index:18;background:rgba(18,12,6,.96);border:2px solid #ffb347;border-radius:13px;padding:15px 18px}
+#dlg-name{color:#ffb347;font-weight:bold;margin-bottom:6px}
+#dlg-text{line-height:1.55;min-height:44px}
+#dlg-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.shop-row,.quest-row{display:flex;justify-content:space-between;align-items:center;gap:12px;width:min(560px,92vw);background:rgba(255,255,255,.07);border:1px solid #ffffff30;border-radius:10px;padding:11px 14px;margin:6px 0;text-align:left}
+.quest-row{flex-direction:column;align-items:flex-start}
+.quest-row .q-status{font-size:13px;color:#ffcf6e}
+#touch-controls{position:absolute;inset:auto 0 0 0;z-index:12;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px 74px}
+#joystick{pointer-events:auto;width:112px;height:112px;border-radius:50%;background:rgba(255,255,255,.13);border:2px solid rgba(255,255,255,.4);position:relative;touch-action:none}
+#joy-knob{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.55);position:absolute;left:32px;top:32px}
+.touch-btns{pointer-events:auto;display:flex;gap:10px}
+.touch-btns button{width:58px;height:58px;border-radius:50%;font-size:24px;border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.5);color:#fff}
+#screen-credits{background:#000;overflow:hidden;justify-content:flex-start}
+#credits-scroll{position:absolute;left:0;right:0;top:100%;text-align:center;line-height:1.5;padding:0 16px}
+#credits-scroll.scrolling{animation:creditsRoll 30s linear forwards}
+#credits-scroll h1{color:#ffb347;letter-spacing:4px}
+#credits-scroll h3{color:#ffe9b0;margin:4px 0 10px}
+@keyframes creditsRoll{from{transform:translateY(0)}to{transform:translateY(-2300px)}}
+.credits-btns{position:absolute;bottom:22px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;z-index:3}
+@media (max-width:640px){#minimap{width:92px;height:69px;top:104px}.hud-right{font-size:14px}#quest-tracker{bottom:150px}}
