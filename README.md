@@ -53,7 +53,7 @@ node tests/e2e.js   # 65 checks
 
 ## Note on GitHub Pages
 
-This repository is **private**, so GitHub Pages will not be publicly live unless the repo is made public or a plan that supports private-repo Pages is used. The game itself needs no hosting — any static file server works.
+This repository is **private**. A GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) is included and deploys on every push to `main`. If your GitHub plan supports Pages for private repos, the game will be live at https://armansoor.github.io/emberfall-open-world/ — otherwise GitHub will not publish a private-repo Pages site on a free plan, and the repo would need to be made public for a public Pages URL. The game itself needs no hosting — any static file server works.
 
 ## Project Layout
 
