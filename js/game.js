@@ -26,6 +26,96 @@ function defaultQuests() {
     amulet: { state: 0, has: false }           // 0 new,1 active,2 done
   };
 }
+/* ---------- Adult Story Mode (21+, OFF by default) ----------
+   Safety rules (non-negotiable):
+   - There are NO minor characters in this game and none are ever created.
+   - Romance is adult-to-adult, consensual only, and can be declined or ended
+     at any point. Intimate moments are suggestive dialogue + fade-to-black
+     ONLY — never graphic sexual detail.
+   - The age gate requires a birth year that makes the player 21+ AND an
+     explicit "I am 21 or older" confirmation. ONLY the boolean
+     adultVerified flag is ever stored — the birth year is never saved,
+     never written to localStorage, and never kept in the save object. */
+function defaultAdult() {
+  return { adultVerified: false, romances: { mira: 0, kael: 0 }, rewarded: { mira: false, kael: false }, tavern: { state: 0, choice: null } };
+}
+/* Pending verification set on the title screen before a game exists; picked
+   up by startNewGame. Once a game is running, S.adult is the source of truth. */
+let adultVerifiedGlobal = false;
+let adultReturnTo = 'title';
+function adultAgeOk(birthYear) {
+  const y = Number(birthYear);
+  if (!Number.isInteger(y)) return false;
+  const cy = new Date().getFullYear();
+  return y >= 1900 && y <= cy && (cy - y) >= 21;
+}
+function isAdultMode() { return !!(S && S.adult && S.adult.adultVerified === true); }
+/* Returns true only if birth year proves 21+ AND confirmed is true. */
+function verifyAdult(birthYear, confirmed) {
+  const ok = adultAgeOk(birthYear) && confirmed === true;
+  adultVerifiedGlobal = ok;
+  if (S) { if (!S.adult || typeof S.adult !== 'object') S.adult = defaultAdult(); S.adult.adultVerified = ok; }
+  updateAdultGateStatus(ok ? 'Adult Story Mode is ON.' : 'Adult Story Mode is OFF / locked.');
+  return ok;
+}
+function disableAdultMode() {
+  adultVerifiedGlobal = false;
+  if (S && S.adult) S.adult.adultVerified = false;
+  updateAdultGateStatus('Adult Story Mode is OFF.');
+  return true;
+}
+function updateAdultGateStatus(msg) {
+  const el = $('adult-status'); if (el && msg) el.textContent = msg;
+}
+function openAdultGate() {
+  adultReturnTo = mode;
+  mode = 'adult'; showScreen('screen-adult');
+  const st = $('adult-status'); if (st) st.textContent = isAdultMode() ? 'Adult Story Mode is currently ON.' : 'Adult Story Mode is currently OFF. Verify below to enable it (21+ only).';
+}
+function closeAdultGate() {
+  if (adultReturnTo === 'paused') { mode = 'paused'; showScreen('screen-pause'); }
+  else if (adultReturnTo === 'playing') { mode = 'playing'; showScreen(null); }
+  else { mode = 'title'; showScreen('screen-title'); }
+}
+function romanceStage(key) { return (S && S.adult && S.adult.romances && Number.isInteger(S.adult.romances[key])) ? S.adult.romances[key] : 0; }
+function endRomance(key) {
+  if (!S || !S.adult) return false;
+  S.adult.romances[key] = 0;
+  toast('You ended that romance, kindly and clearly. You can always talk again.');
+  closeDialogue(); updateHUD(); return true;
+}
+function startTavernQuest() {
+  if (!isAdultMode() || !S) return false;
+  if (S.adult.tavern.state !== 0) return false;
+  S.adult.tavern.state = 1; S.adult.tavern.choice = null;
+  toast('⚖️ Tavern dilemma accepted — talk to Mira again to decide.');
+  updateHUD(); return true;
+}
+function completeTavernQuest(choice) {
+  if (!isAdultMode() || !S) return false;
+  if (S.adult.tavern.state !== 1) return false;
+  const p = S.player;
+  S.adult.tavern.state = 2; S.adult.tavern.choice = choice || 'home';
+  if (choice === 'ignore') { p.gold += 20; gainXP(20); toast('⚖️ You looked away. The night ended badly — a lesson in responsibility. +20 gold.'); }
+  else if (choice === 'refuse') { p.gold += 70; gainXP(30); toast('⚖️ You refused more drinks and offered water and food. A hard, kind call. +70 gold.'); }
+  else { p.gold += 90; gainXP(40); toast('⚖️ You walked him home safely. The tavern thanks you. +90 gold.'); }
+  updateHUD(); return true;
+}
+function validateAdult(raw) {
+  const a = defaultAdult();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return a; // missing/corrupt -> OFF
+  a.adultVerified = raw.adultVerified === true;
+  if (raw.romances && typeof raw.romances === 'object') {
+    for (const k of ['mira', 'kael']) { const v = raw.romances[k]; if (Number.isInteger(v) && v >= 0 && v <= 3) a.romances[k] = v; }
+  }
+  if (raw.rewarded && typeof raw.rewarded === 'object') {
+    for (const k of ['mira', 'kael']) if (raw.rewarded[k] === true) a.rewarded[k] = true;
+  }
+  if (raw.tavern && typeof raw.tavern === 'object' && Number.isInteger(raw.tavern.state) && raw.tavern.state >= 0 && raw.tavern.state <= 2) {
+    a.tavern.state = raw.tavern.state; a.tavern.choice = (typeof raw.tavern.choice === 'string') ? raw.tavern.choice : null;
+  }
+  return a;
+}
 function newPlayer(cfg) {
   const c = CLASSES[cfg.cls];
   return {
@@ -67,7 +157,7 @@ function spawnBoss() {
 }
 
 /* ---------- UI helpers ---------- */
-const SCREENS = ['screen-title','screen-how','screen-create','screen-intro','screen-shop','screen-quests','screen-pause','screen-death','screen-ending','screen-credits'];
+const SCREENS = ['screen-title','screen-how','screen-create','screen-intro','screen-shop','screen-quests','screen-pause','screen-adult','screen-death','screen-ending','screen-credits'];
 function showScreen(id) { SCREENS.forEach(s => $(s).classList.toggle('hidden', s !== id)); if (!id) SCREENS.forEach(s => $(s).classList.add('hidden')); }
 function toast(msg, ms) {
   const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
@@ -89,13 +179,15 @@ function updateHUD() {
   else track = '📜 The Ember is restored. Free-roam!';
   if (q.slimes.state === 1) track += `<br>🌾 Slimes defeated: ${q.slimes.kills}/${q.slimes.need}`;
   if (q.amulet.state === 1) track += `<br>🧭 ${q.amulet.has ? 'Return the amulet to Scout Renn' : 'Find the lost amulet in the Forest (NE of village path)'}`;
+  if (isAdultMode() && S.adult.tavern.state === 1) track += '<br>⚖️ Tavern dilemma: talk to Mira to decide';
   $('quest-tracker').innerHTML = track;
 }
 function shardCount() { const s = S.quests.main.shards; return (s.forest ? 1 : 0) + (s.desert ? 1 : 0) + (s.snow ? 1 : 0); }
 
 /* ---------- Game flow ---------- */
 function startNewGame(cfg) {
-  S = { player: newPlayer(cfg), quests: defaultQuests(), enemies: [], projectiles: [], amuletOut: false, kills: 0, playSeconds: 0 };
+  const adult = defaultAdult(); adult.adultVerified = adultVerifiedGlobal === true;
+  S = { player: newPlayer(cfg), quests: defaultQuests(), adult, enemies: [], projectiles: [], amuletOut: false, kills: 0, playSeconds: 0 };
   spawnWorldEnemies();
   mode = 'intro';
   $('intro-hero-line').textContent = `You are ${cfg.name}, a ${cfg.cls} — the last Emberbearer. Elder Mara is waiting for you in Ember Village.`;
@@ -110,7 +202,8 @@ function enterWorld() {
 }
 function startNGPlus() {
   const p = S.player; p.ngPlus++; p.hp = p.maxHp; p.mp = p.maxMp; p.x = SPAWN.x; p.y = SPAWN.y;
-  S.quests = defaultQuests(); S.projectiles = []; S.amuletOut = false;
+  const keptAdult = validateAdult(S.adult); keptAdult.tavern = { state: 0, choice: null }; // NG+: relationships carry over, tavern dilemma resets
+  S.quests = defaultQuests(); S.adult = keptAdult; adultVerifiedGlobal = keptAdult.adultVerified; S.projectiles = []; S.amuletOut = false;
   spawnWorldEnemies(); enterWorld();
   toast(`⭐ New Game+ ${p.ngPlus} — enemies are stronger. The shards have scattered again!`);
   EmberAudio.quest();
@@ -121,6 +214,9 @@ function saveGame() {
   if (!S) return false;
   try {
     const data = { player: S.player, quests: S.quests, kills: S.kills, savedAt: Date.now(),
+      /* Adult flag only: a boolean + romance/quest progress. The birth year
+         is NEVER included here (verifyAdult never stores it anywhere). */
+      adult: validateAdult(S.adult),
       deadGuards: S.enemies.filter(e => e.guardShard && e.dead).map(e => e.guardShard),
       bossDead: S.quests.main.stage >= 3 };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data)); toast('💾 Game saved'); return true;
@@ -131,7 +227,9 @@ function loadGame() {
   try {
     const raw = localStorage.getItem(SAVE_KEY); if (!raw) return false;
     const d = JSON.parse(raw); if (!d || !d.player || !d.quests) return false;
-    S = { player: d.player, quests: d.quests, enemies: [], projectiles: [], amuletOut: d.quests.amulet.state === 1 && !d.quests.amulet.has, kills: d.kills || 0, playSeconds: 0 };
+    const adult = validateAdult(d.adult); // missing/corrupt -> adultVerified OFF
+    adultVerifiedGlobal = adult.adultVerified;
+    S = { player: d.player, quests: d.quests, adult, enemies: [], projectiles: [], amuletOut: d.quests.amulet.state === 1 && !d.quests.amulet.has, kills: d.kills || 0, playSeconds: 0 };
     spawnWorldEnemies();
     (d.deadGuards || []).forEach(id => { const g = S.enemies.find(e => e.guardShard === id); if (g) g.dead = true; });
     if (S.quests.main.stage === 2) spawnBoss();
@@ -254,6 +352,15 @@ function renderQuests() {
   h += row('🔥 The Shattered Ember (Main)', q.main.stage === 0 ? 'Not started — speak to Elder Mara' : q.main.stage === 1 ? `In progress — ${sc}/3 shards` : q.main.stage === 2 ? 'Boss unlocked — defeat Malachar!' : '✅ Complete', 'Collect the Verdant (Forest NW), Solar (Desert NE) and Frost (Snowfields SW) shards, then face Malachar in the Shadowlands (SE).');
   h += row('🌾 Slime Menace (Farmer Lio)', q.slimes.state === 0 ? 'Not started' : q.slimes.state === 1 ? `In progress — ${q.slimes.kills}/${q.slimes.need} slimes` : '✅ Complete', `Defeat ${q.slimes.need} slimes. Reward: 60 gold + potion.`);
   h += row('🧭 The Lost Amulet (Scout Renn)', q.amulet.state === 0 ? 'Not started' : q.amulet.state === 1 ? (q.amulet.has ? 'Amulet found — return to Renn' : 'In progress — search the Forest') : '✅ Complete', 'Find Renn\'s amulet in the Whispering Forest. Reward: 80 gold + elixir.');
+  /* Adult entries are rendered ONLY when Adult Story Mode is verified ON.
+     When OFF, no romance or tavern-dilemma text appears anywhere in the journal. */
+  if (isAdultMode()) {
+    const stageName = s => s === 0 ? 'Not started' : s === 1 ? 'Flirting — ask them on a date' : s === 2 ? 'Dating — one more date to go' : '💖 Partners';
+    h += row('💖 Mira Vale, 29 — Tavern Keeper (Adult, 21+)', stageName(romanceStage('mira')), 'Adult-to-adult romance: meet, flirt, dates at the tavern and the lake. You can decline or end it at any time.');
+    h += row('💖 Kael Thorn, 27 — Wandering Bard (Adult, 21+)', stageName(romanceStage('kael')), 'Adult-to-adult romance: meet, flirt, dates at the lake and the tavern. You can decline or end it at any time.');
+    const tv = S.adult.tavern;
+    h += row('⚖️ A Difficult Night at the Tavern (Adult, 21+)', tv.state === 0 ? 'Not started — talk to Mira' : tv.state === 1 ? 'In progress — decide what to do' : '✅ Complete', 'A mature moral dilemma: a patron who has had too much to drink. Your choice has consequences.');
+  }
   $('quest-list').innerHTML = h;
 }
 function openQuests() { if (mode !== 'playing') return; mode = 'quests'; renderQuests(); showScreen('screen-quests'); }
@@ -270,8 +377,81 @@ function showDialogue(name, text, actions) {
   $('dialogue').classList.remove('hidden');
 }
 function closeDialogue() { $('dialogue').classList.add('hidden'); if (mode === 'dialogue') mode = 'playing'; }
+/* Romanceable adults: explicit adult ages stated in-story, no ambiguity.
+   All text below is tasteful and non-graphic; intimate beats are
+   "fade to black" only. Nothing here is reachable unless isAdultMode(). */
+const ROMANCE = {
+  mira: { age: 29, short: 'Mira',
+    neutral: 'Welcome to the tavern. Warm food, a seat by the fire, and no rush — that is what we offer here. Rest a while, traveller.',
+    meet: 'I am Mira Vale, 29 years old, keeper of this tavern. I have poured drinks for heroes and farmers alike, and I can usually tell a good soul from a bad one in a single conversation. You seem like the former.',
+    flirted: 'You have a way with words, Emberbearer. If you are asking me properly — yes, I would like to spend an evening with you. The tavern, after closing, is quiet and warm.',
+    dated: 'That evening at the tavern was lovely. One more, somewhere quieter? There is a lakeside clearing north of the village where the water catches the evening light.',
+    partner: 'You and I — we understand each other. Whatever the road brings, you will always have a warm seat waiting for you here, and my company, whenever you want it.',
+    date1Label: '🍷 Tavern date', date2Label: '🌙 Lakeside evening',
+    fade: 'The evening draws to a close, soft and unhurried. The scene fades to black. Later, you part with a warm goodnight — closer than before, and happy to have taken your time.' },
+  kael: { age: 27, short: 'Kael',
+    neutral: 'Ah, a traveller! Sit, sit — every road deserves a song. I will sing you one of the village, free of charge, and you can tell me if I got the chorus right.',
+    meet: 'Kael Thorn, 27, wandering bard, at your service. I have sung in a dozen villages and loved none of them quite like this one. You carry yourself like someone with a story worth a song.',
+    flirted: 'Well now — a hero who listens. I like that. If you mean it, meet me by the lake at dusk. I will bring a song; you bring yourself. That is all a first date needs.',
+    dated: 'That lakeside evening is already one of my favourite songs, and it has no ending yet. Shall we follow it with an evening at the tavern — food, music, and no audience but us?',
+    partner: 'You are my favourite verse, Emberbearer. Wherever the road takes you, my songs will follow — and so will I, whenever you ask.',
+    date1Label: '🌙 Lakeside date', date2Label: '🍷 Tavern evening',
+    fade: 'The music softens, the evening draws to a close, and the scene fades to black. Later, you part with a warm goodnight — closer than before, and glad you took it slowly.' }
+};
+function talkToRomance(npc) {
+  const key = npc.id, R = ROMANCE[key], p = S.player;
+  if (!isAdultMode()) {
+    /* OFF / unverified: only a neutral, non-romantic greeting. No flirt,
+       date, romance or dilemma option is offered or mentioned. */
+    showDialogue(npc.name, R.neutral, [{ label: 'Close', fn: closeDialogue }]);
+    updateHUD(); return true;
+  }
+  const stage = romanceStage(key), tv = S.adult.tavern;
+  const dilemmaBtn = (key === 'mira' && tv.state === 0) ? [{ label: '⚖️ Help with a tavern dilemma', fn: () => {
+    showDialogue('Mira Vale — A Difficult Night', 'A regular here has had far too much to drink, owes coin he cannot pay, and wants to gamble it back. He is a good man on a bad night, and I cannot decide for him. Will you help me decide what to do?', [
+      { label: '✅ Accept — help decide', fn: () => { startTavernQuest(); closeDialogue(); } },
+      { label: 'Not now', fn: closeDialogue }]);
+  } }] : [];
+  const endBtn = stage > 0 ? [{ label: '💔 End this romance', fn: () => endRomance(key) }] : [];
+  if (key === 'mira' && tv.state === 1) {
+    /* Tavern dilemma decision — offered on talking to Mira while it is active. */
+    showDialogue('Mira Vale — A Difficult Night', 'He is still here, and the night is getting late. What should we do? Every choice has a consequence — choose like an adult, not like a hero in a hurry.', [
+      { label: '🚶 Walk him home safely', fn: () => { completeTavernQuest('home'); closeDialogue(); } },
+      { label: '💧 Refuse more drinks, offer water and food', fn: () => { completeTavernQuest('refuse'); closeDialogue(); } },
+      { label: '🎲 Look away and let him gamble', fn: () => { completeTavernQuest('ignore'); closeDialogue(); } },
+      { label: 'Decide later', fn: closeDialogue }]);
+    updateHUD(); return true;
+  }
+  if (stage === 0) {
+    showDialogue(npc.name, R.meet, [
+      { label: `💬 Flirt with ${R.short}`, fn: () => { S.adult.romances[key] = 1; EmberAudio.quest(); toast(`💖 ${R.short} smiles — you are getting to know each other.`); closeDialogue(); updateHUD(); } },
+      ...dilemmaBtn,
+      { label: 'Just chatting', fn: closeDialogue }]);
+  } else if (stage === 1) {
+    showDialogue(npc.name, R.flirted, [
+      { label: R.date1Label, fn: () => { S.adult.romances[key] = 2; EmberAudio.quest(); toast(`💖 A lovely date with ${R.short}.`); closeDialogue(); updateHUD(); } },
+      ...dilemmaBtn, ...endBtn,
+      { label: 'Not yet', fn: closeDialogue }]);
+  } else if (stage === 2) {
+    showDialogue(npc.name, R.dated, [
+      { label: R.date2Label, fn: () => {
+        S.adult.romances[key] = 3;
+        if (!S.adult.rewarded[key]) { S.adult.rewarded[key] = true; p.gold += 120; p.potions.elixir++; EmberAudio.coin(); toast(`💖 You and ${R.short} are partners now. +120 gold, +1 elixir.`); }
+        else toast(`💖 You and ${R.short} are partners again.`);
+        showDialogue(npc.name, R.fade, [{ label: 'Continue', fn: closeDialogue }]); updateHUD(); } },
+      ...dilemmaBtn, ...endBtn,
+      { label: 'Not yet', fn: closeDialogue }]);
+  } else {
+    showDialogue(npc.name, R.partner, [
+      { label: '💖 Spend time together', fn: () => { toast(`💖 A quiet, happy evening with ${R.short}.`); closeDialogue(); } },
+      ...dilemmaBtn, ...endBtn,
+      { label: 'Close', fn: closeDialogue }]);
+  }
+  updateHUD(); return true;
+}
 function talkTo(npc) {
   if (!npc || !S) return false;
+  if (npc.role === 'romance_mira' || npc.role === 'romance_kael') return talkToRomance(npc);
   const q = S.quests, p = S.player;
   if (npc.role === 'elder') {
     if (q.main.stage === 0) showDialogue(npc.name, 'The Ember Crystal is shattered, child. Three shards lie guarded across the Forest, the Desert and the Snowfields. Claim them all, and the Ashen King\'s seal will break. Will you carry this burden?', [
@@ -446,6 +626,7 @@ document.addEventListener('keydown', e => {
   } else if (mode === 'paused' && (k === 'escape' || k === 'p')) resumeGame();
   else if (mode === 'quests' && (k === 'q' || k === 'escape')) closeQuests();
   else if (mode === 'dialogue' && k === 'escape') closeDialogue();
+  else if (mode === 'adult' && k === 'escape') closeAdultGate();
 });
 document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 function canvasPos(ev) { const r = canvas.getBoundingClientRect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX), cy = (ev.touches ? ev.touches[0].clientY : ev.clientY); return { x: (cx - r.left) * canvas.width / r.width, y: (cy - r.top) * canvas.height / r.height }; }
@@ -495,6 +676,15 @@ $('btn-pause').addEventListener('click', pauseGame);
 $('btn-resume').addEventListener('click', resumeGame);
 $('btn-save').addEventListener('click', () => { saveGame(); });
 $('btn-quit-title').addEventListener('click', quitToTitle);
+$('btn-adult-title').addEventListener('click', openAdultGate);
+$('btn-adult-pause').addEventListener('click', openAdultGate);
+$('btn-adult-enable').addEventListener('click', () => {
+  const year = $('adult-birth-year').value, confirmed = $('adult-confirm').checked;
+  if (verifyAdult(year, confirmed)) { toast('🔞 Adult Story Mode enabled (21+).'); }
+  else { $('adult-status').textContent = 'Locked: enter a birth year that makes you 21 or older AND tick "I am 21 or older". Nothing was enabled and nothing was saved.'; }
+});
+$('btn-adult-disable').addEventListener('click', () => { disableAdultMode(); toast('Adult Story Mode turned off.'); });
+$('btn-adult-close').addEventListener('click', closeAdultGate);
 $('btn-quests').addEventListener('click', openQuests);
 $('btn-quests-close').addEventListener('click', closeQuests);
 $('btn-shop-close').addEventListener('click', closeShop);
@@ -525,6 +715,8 @@ window.__EMBERFALL__ = {
   collectShard, pickupAmulet, shardCount, doInteract, nearestInteractable,
   pauseGame, resumeGame, quitToTitle, openShop, closeShop, openQuests, closeQuests,
   collides, getBiome, tryMove, setKeys: k => { keys = Object.assign({}, k); }, setJoy: v => { joyVec = v; },
-  spawnBoss, gainXP, update, render, drawMinimap, NPCS_ref: NPCS, SHOP_ITEMS_ref: SHOP_ITEMS
+  spawnBoss, gainXP, update, render, drawMinimap, NPCS_ref: NPCS, SHOP_ITEMS_ref: SHOP_ITEMS,
+  verifyAdult, adultAgeOk, isAdultMode, disableAdultMode, openAdultGate, closeAdultGate,
+  romanceStage, endRomance, startTavernQuest, completeTavernQuest, defaultAdult, validateAdult
 };
 })();

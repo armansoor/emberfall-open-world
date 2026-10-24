@@ -53,6 +53,8 @@
     <button id="btn-new" class="big-btn">⚔️ New Game</button>
     <button id="btn-continue" class="big-btn hidden">▶ Continue</button>
     <button id="btn-how" class="big-btn secondary">🎮 How to Play</button>
+    <button id="btn-adult-title" class="big-btn secondary">🔞 Adult Story Mode (21+)</button>
+    <p><b>Play free — no account needed, no purchase, no paywall.</b></p>
     <p style="margin-top:8px">Also try <a href="https://armansoor.github.io/emberfall-3d/" target="_blank" rel="noopener" style="color:#ffcf6e">Emberfall 3D →</a></p>
     <p class="credit-line">Created by Abdur Rahman Mansoor · Built by Nyx / Muse</p>
   </section>
@@ -144,9 +146,31 @@
   <section id="screen-pause" class="screen modal hidden">
     <h2>⏸ Paused</h2>
     <button class="big-btn" id="btn-resume">▶ Resume</button>
+    <button class="big-btn secondary" id="btn-adult-pause">🔞 Adult Story Mode (21+)</button>
     <button class="big-btn secondary" id="btn-save">💾 Save Game</button>
     <button class="big-btn secondary" id="btn-sound2">🔊 Toggle Sound</button>
     <button class="big-btn secondary" id="btn-quit-title">🏠 Quit to Title</button>
+  </section>
+
+  <!-- ADULT STORY MODE AGE GATE (21+) -->
+  <section id="screen-adult" class="screen modal hidden">
+    <h2>🔞 Adult Story Mode — 21+ Only</h2>
+    <div class="panel-text" id="adult-warning">
+      <p><b>Content warning:</b> this optional mode includes mature themes — romance between adults, alcohol in the tavern, violence, and moral choices. It is for players aged 21 or older only.</p>
+      <p>Romance here is adult-to-adult and consensual only. You can decline or end any romance at any time, and intimate moments are suggestive dialogue with a fade to black — never graphic detail. Turning this mode off hides all of its dialogue completely.</p>
+      <p>The game itself stays free, with no account and no purchase.</p>
+    </div>
+    <label class="field" for="adult-birth-year">Birth year
+      <input id="adult-birth-year" type="number" inputmode="numeric" min="1900" max="2100" placeholder="e.g. 1995" autocomplete="off">
+    </label>
+    <label class="check-row"><input id="adult-confirm" type="checkbox"> <span>I am 21 or older</span></label>
+    <p id="adult-status">Adult Story Mode is currently OFF.</p>
+    <p class="small-note">Only a yes/no flag is saved. Your birth year is never stored.</p>
+    <div class="row-btns">
+      <button class="big-btn" id="btn-adult-enable">✅ Enable Adult Story Mode</button>
+      <button class="big-btn secondary" id="btn-adult-disable">Turn Adult Mode Off</button>
+      <button class="big-btn secondary" id="btn-adult-close">← Back</button>
+    </div>
   </section>
 
   <!-- DEATH -->
@@ -178,7 +202,7 @@
       <p>&nbsp;</p><p>Designed, Built &amp; Tested by</p><h3>Nyx / Muse</h3>
       <p>&nbsp;</p><p>Starring</p><h3 id="credits-hero">You, the Emberbearer</h3>
       <p>&nbsp;</p><p>Villain</p><h3>Malachar, the Ashen King</h3>
-      <p>&nbsp;</p><p>The Villagers of Ember Village</p><h3>Elder Mara · Bram the Shopkeeper<br>Farmer Lio · Scout Renn · Healer Sana</h3>
+      <p>&nbsp;</p><p>The Villagers of Ember Village</p><h3>Elder Mara · Bram the Shopkeeper<br>Farmer Lio · Scout Renn · Healer Sana<br>Mira Vale · Kael Thorn</h3>
       <p>&nbsp;</p><p>Music &amp; Sound</p><h3>A tiny WebAudio synthesiser</h3>
       <p>&nbsp;</p><p>Engine</p><h3>Vanilla HTML · CSS · JavaScript · Canvas</h3>
       <p>&nbsp;</p><p>Special Thanks</p><h3>Every MONSTIEZ &amp; BLINK<br>who believes in finishing the quest</h3>

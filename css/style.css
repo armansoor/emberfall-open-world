@@ -10,14 +10,15 @@ canvas#game{width:100%;height:100%;display:block;background:#2d5a27;touch-action
 .tagline{opacity:.85;font-style:italic}
 .credit-line{margin-top:auto;font-size:13px;opacity:.7}
 h2{color:#ffb347;font-size:clamp(24px,5vw,36px)}
-.big-btn{display:block;min-width:min(320px,86vw);padding:13px 22px;font-size:18px;font-family:inherit;font-weight:bold;color:#241203;background:linear-gradient(#ffcf6e,#f39c12);border:2px solid #7a2d00;border-radius:12px;cursor:pointer}
+.big-btn{display:block;min-width:min(320px,86vw);width:min(340px,92vw);min-height:48px;padding:13px 22px;font-size:18px;font-family:inherit;font-weight:bold;color:#241203;background:linear-gradient(#ffcf6e,#f39c12);border:2px solid #7a2d00;border-radius:12px;cursor:pointer}
 .big-btn:hover{filter:brightness(1.1)} .big-btn.secondary{background:linear-gradient(#5d6d7e,#34495e);color:#fff;border-color:#1a252f}
-.mini-btn{padding:5px 10px;border-radius:8px;border:1px solid #888;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:13px}
+button:focus-visible{outline:3px solid #ffb347;outline-offset:2px}
+.mini-btn{min-height:44px;padding:10px 14px;border-radius:8px;border:1px solid #888;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:14px}
 .field{font-weight:bold;color:#ffcf6e;margin-top:8px}
 input#cc-name{padding:11px;font-size:17px;border-radius:9px;border:2px solid #f39c12;background:#1c150c;color:#fff;text-align:center;width:min(320px,86vw)}
 .card-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:760px}
-.choice-card{width:200px;padding:13px;border-radius:12px;border:3px solid #555;background:#221a10;color:#f5f0e6;cursor:pointer;display:flex;flex-direction:column;gap:5px;align-items:center;font-family:inherit}
-.choice-card small{opacity:.85;line-height:1.35}.choice-card.small{width:150px}
+.choice-card{width:min(200px,86vw);min-height:44px;padding:13px;border-radius:12px;border:3px solid #555;background:#221a10;color:#f5f0e6;cursor:pointer;display:flex;flex-direction:column;gap:5px;align-items:center;font-family:inherit}
+.choice-card small{opacity:.85;line-height:1.35}.choice-card.small{width:min(150px,42vw)}
 .choice-card.selected{border-color:#ffb347;box-shadow:0 0 14px rgba(255,150,0,.6)}
 .cc-emoji{font-size:32px}
 .swatch{width:44px;height:44px;border-radius:50%;border:3px solid #555;cursor:pointer}
@@ -38,11 +39,13 @@ input#cc-name{padding:11px;font-size:17px;border-radius:9px;border:2px solid #f3
 .hud-buttons{position:absolute;right:10px;bottom:12px;display:flex;gap:6px}
 #toast{position:absolute;top:22%;left:50%;transform:translateX(-50%);z-index:15;background:rgba(20,14,4,.92);border:2px solid #ffb347;color:#ffe9b0;padding:11px 20px;border-radius:11px;font-size:16px;max-width:88vw;text-align:center}
 #interact-prompt{position:absolute;bottom:19%;left:50%;transform:translateX(-50%);z-index:8;background:rgba(0,0,0,.7);padding:7px 14px;border-radius:8px}
-.dialogue{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;width:min(680px,94vw);z-index:18;background:rgba(18,12,6,.96);border:2px solid #ffb347;border-radius:13px;padding:15px 18px}
+.dialogue{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;width:min(680px,94vw);max-height:62dvh;overflow-y:auto;z-index:18;background:rgba(18,12,6,.96);border:2px solid #ffb347;border-radius:13px;padding:15px 18px}
 #dlg-name{color:#ffb347;font-weight:bold;margin-bottom:6px}
-#dlg-text{line-height:1.55;min-height:44px}
+#dlg-text{line-height:1.55;min-height:44px;max-height:34dvh;overflow-y:auto}
 #dlg-actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
-.shop-row,.quest-row{display:flex;justify-content:space-between;align-items:center;gap:12px;width:min(560px,92vw);background:rgba(255,255,255,.07);border:1px solid #ffffff30;border-radius:10px;padding:11px 14px;margin:6px 0;text-align:left}
+#shop-items,#quest-list{max-height:60dvh;overflow-y:auto;width:100%;display:flex;flex-direction:column;align-items:center;padding-right:4px}
+.shop-row,.quest-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;width:min(560px,92vw);background:rgba(255,255,255,.07);border:1px solid #ffffff30;border-radius:10px;padding:11px 14px;margin:6px 0;text-align:left}
+.shop-row .mini-btn{flex-shrink:0}
 .quest-row{flex-direction:column;align-items:flex-start}
 .quest-row .q-status{font-size:13px;color:#ffcf6e}
 #touch-controls{position:absolute;inset:auto 0 0 0;z-index:12;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px 74px}
@@ -57,4 +60,57 @@ input#cc-name{padding:11px;font-size:17px;border-radius:9px;border:2px solid #f3
 #credits-scroll h3{color:#ffe9b0;margin:4px 0 10px}
 @keyframes creditsRoll{from{transform:translateY(0)}to{transform:translateY(-2300px)}}
 .credits-btns{position:absolute;bottom:22px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;z-index:3}
-@media (max-width:640px){#minimap{width:92px;height:69px;top:104px}.hud-right{font-size:14px}#quest-tracker{bottom:150px}}
+/* Adult age gate: large, tappable controls; never hover-dependent. */
+.check-row{display:flex;gap:12px;align-items:center;font-size:17px;font-weight:bold;color:#ffcf6e;cursor:pointer}
+.check-row input[type=checkbox]{width:24px;height:24px;accent-color:#f39c12;flex-shrink:0}
+input#adult-birth-year{padding:12px;font-size:17px;border-radius:9px;border:2px solid #f39c12;background:#1c150c;color:#fff;text-align:center;width:min(220px,70vw);min-height:44px}
+#adult-status{color:#ffcf6e;font-weight:bold;min-height:22px}
+.small-note{font-size:13px;opacity:.8;max-width:560px}
+#screen-adult .panel-text p{margin-bottom:8px}
+/* HUD safe-area + minimap kept clear of HUD buttons (buttons live at the
+   bottom, minimap at the top-right; sizes shrink on small screens). */
+.hud-left{top:calc(10px + env(safe-area-inset-top, 0px))}
+.hud-right{top:calc(10px + env(safe-area-inset-top, 0px))}
+#touch-controls{padding-bottom:calc(74px + env(safe-area-inset-bottom, 0px))}
+/* Tablet (~768px): tighter screens, smaller minimap, roomier panels. */
+@media (max-width:768px){
+  .screen{padding:18px 12px;gap:10px}
+  .screen.modal{justify-content:flex-start}
+  .panel-text{font-size:16px;padding:14px}
+  .panel-text.story{font-size:16px}
+  #minimap{width:110px;height:82px;top:96px;right:8px}
+  .hud-left{width:min(220px,48vw)}
+  #hud-name{font-size:13px}
+  .dialogue{width:96vw;padding:12px 14px;bottom:10px;max-height:68dvh}
+  .credits-btns{bottom:10px}
+}
+/* Small mobile (~360px): one-column cards, compact HUD, no overflow. */
+@media (max-width:480px){
+  .screen{padding:14px 10px;gap:9px}
+  .logo{margin-top:2vh}
+  h2{font-size:24px}
+  .big-btn{font-size:17px;padding:12px 16px;width:94vw}
+  .mini-btn{font-size:13px}
+  .card-row{gap:8px}
+  #minimap{width:84px;height:63px;top:108px;right:8px}
+  .hud-right{font-size:13px}
+  .hud-left{width:min(200px,52vw)}
+  #quest-tracker{bottom:160px;max-width:86vw;font-size:12px}
+  #toast{font-size:14px;padding:9px 14px}
+  #interact-prompt{font-size:13px;max-width:90vw;text-align:center}
+  .shop-row,.quest-row{width:94vw}
+  #shop-items,#quest-list{max-height:52dvh}
+  .touch-btns button{width:56px;height:56px}
+}
+/* Short landscape (phones held sideways): screens scroll from the top
+   instead of clipping, dialogue stays inside the viewport. */
+@media (max-height:520px){
+  .screen{justify-content:flex-start;padding:12px}
+  .screen.modal{justify-content:flex-start}
+  .logo{margin-top:0}
+  .dialogue{max-height:78dvh}
+  #dlg-text{max-height:40dvh}
+  #credits-scroll{font-size:14px}
+  .credits-btns{position:static;margin-top:auto}
+  #screen-credits{overflow-y:auto}
+}

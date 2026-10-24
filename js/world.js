@@ -59,7 +59,12 @@ const NPCS = [
   { id: 'bram', name: 'Bram the Shopkeeper', icon: '🧔', x: 1635, y: 2230, color: '#b9770e', role: 'shop' },
   { id: 'lio', name: 'Farmer Lio', icon: '🌾', x: 1700, y: 2680, color: '#229954', role: 'side_slimes' },
   { id: 'renn', name: 'Scout Renn', icon: '🧭', x: 2180, y: 2680, color: '#2471a3', role: 'side_amulet' },
-  { id: 'sana', name: 'Healer Sana', icon: '💖', x: 2160, y: 2230, color: '#e84393', role: 'healer' }
+  { id: 'sana', name: 'Healer Sana', icon: '💖', x: 2160, y: 2230, color: '#e84393', role: 'healer' },
+  /* Adult Story Mode romanceable NPCs — both explicitly adults (see dialogue text).
+     Their romance content is gated behind the 21+ age gate in game.js and is
+     completely hidden when Adult Story Mode is OFF. No minor characters exist. */
+  { id: 'mira', name: 'Mira Vale, Tavern Keeper', icon: '🍷', x: 2050, y: 2420, color: '#c0392b', role: 'romance_mira', age: 29 },
+  { id: 'kael', name: 'Kael Thorn, Wandering Bard', icon: '🎵', x: 1750, y: 2420, color: '#2980b9', role: 'romance_kael', age: 27 }
 ];
 
 const ENEMY_TYPES = {

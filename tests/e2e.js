@@ -193,6 +193,99 @@ function near(E, x, y) { E.state.player.x = x; E.state.player.y = y; }
     check('mobile: potion button is wired (restores HP)', S.player.hp === 80);
     w.close();
   }
+  /* --- Adult Story Mode (21+): gate, hiding, romance, tavern quest, persistence --- */
+  {
+    const cy = new Date().getFullYear();
+    const btnWith = ($, text) => [...$('dlg-actions').querySelectorAll('button')].find(b => b.textContent.toLowerCase().includes(text.toLowerCase()));
+    /* Gate blocks under-21, missing confirmation, invalid and future years. */
+    const g = fresh(); const Sg = play(g.w, g.E);
+    check('adult: age gate blocks under-21 (birth year = current year - 20)', g.E.verifyAdult(cy - 20, true) === false && g.E.isAdultMode() === false);
+    check('adult: age gate blocks 21+ year without explicit confirmation', g.E.verifyAdult(cy - 30, false) === false && g.E.isAdultMode() === false);
+    check('adult: age gate blocks invalid / future birth years', g.E.verifyAdult('not-a-year', true) === false && g.E.verifyAdult(cy + 1, true) === false);
+    check('adult: age gate allows exactly 21 (birth year = current year - 21) with confirmation', g.E.verifyAdult(cy - 21, true) === true && g.E.isAdultMode() === true);
+    check('adult: disable turns the mode back off', g.E.disableAdultMode() === true && g.E.isAdultMode() === false);
+    g.w.close();
+    /* Adult dialogue completely hidden when OFF. */
+    const o = fresh(); const So = play(o.w, o.E, null, { name: 'T', cls: 'Knight', color: '#e74c3c', diff: 'Normal' });
+    const miraO = o.E.NPCS_ref.find(n => n.id === 'mira'); near(o.E, miraO.x, miraO.y); o.E.doInteract();
+    const offText = o.$('dlg-text').textContent + ' ' + o.$('dlg-actions').textContent;
+    check('adult: romance dialogue hidden when OFF (no flirt/date/romance options)', !/flirt|date|romance/i.test(offText));
+    o.$('dlg-actions').querySelector('button').click(); // Close neutral dialogue -> back to playing
+    o.E.openQuests(); check('adult: quest journal hides adult entries when OFF', o.E.mode === 'quests' && !o.$('quest-list').innerHTML.includes('Mira Vale') && !o.$('quest-list').innerHTML.includes('Tavern'));
+    o.E.closeQuests();
+    /* Romance progression + reward, Mira (29) full path. */
+    check('adult: enabling 21+ exposes romance options', o.E.verifyAdult(cy - 29, true) === true);
+    near(o.E, miraO.x, miraO.y); o.E.doInteract();
+    check('adult: Mira meet text states her adult age (29)', o.$('dlg-text').textContent.includes('29'));
+    btnWith(o.$, 'Flirt').click();
+    check('adult: flirt advances Mira romance to stage 1', o.E.romanceStage('mira') === 1);
+    near(o.E, miraO.x, miraO.y); o.E.doInteract(); btnWith(o.$, 'Tavern date').click();
+    check('adult: tavern date advances Mira romance to stage 2', o.E.romanceStage('mira') === 2);
+    const goldBefore = So.player.gold;
+    near(o.E, miraO.x, miraO.y); o.E.doInteract(); btnWith(o.$, 'Lakeside').click();
+    check('adult: lakeside date reaches milestone (stage 3) with fade-to-black, not graphic detail', o.E.romanceStage('mira') === 3 && o.$('dlg-text').textContent.toLowerCase().includes('fades to black'));
+    check('adult: romance milestone grants reward (+120 gold, +1 elixir)', So.player.gold === goldBefore + 120 && So.player.potions.elixir >= 1);
+    o.$('dlg-actions').querySelector('button').click(); // close fade dialogue
+    /* Kael (27) can be flirted with too, and a romance can be ended. */
+    const kael = o.E.NPCS_ref.find(n => n.id === 'kael'); near(o.E, kael.x, kael.y); o.E.doInteract();
+    check('adult: Kael meet text states his adult age (27)', o.$('dlg-text').textContent.includes('27'));
+    btnWith(o.$, 'Flirt').click();
+    check('adult: Kael romance reaches stage 1 and can be ended', o.E.romanceStage('kael') === 1);
+    near(o.E, kael.x, kael.y); o.E.doInteract(); btnWith(o.$, 'End this romance').click();
+    check('adult: ending a romance resets its stage and returns to playing', o.E.romanceStage('kael') === 0 && o.E.mode === 'playing');
+    o.w.close();
+    /* Tavern dilemma quest: accept -> choose -> complete with reward. */
+    const t = fresh(); const St = play(t.w, t.E); t.E.verifyAdult(cy - 30, true);
+    const miraT = t.E.NPCS_ref.find(n => n.id === 'mira'); near(t.E, miraT.x, miraT.y); t.E.doInteract();
+    btnWith(t.$, 'dilemma').click();
+    check('adult: tavern dilemma offer dialogue appears (21+ only)', t.$('dlg-text').textContent.includes('gamble'));
+    btnWith(t.$, 'Accept').click();
+    check('adult: tavern dilemma accepted (state 1)', St.adult.tavern.state === 1);
+    const goldT = St.player.gold;
+    near(t.E, miraT.x, miraT.y); t.E.doInteract(); btnWith(t.$, 'Walk him home').click();
+    check('adult: tavern dilemma completes with safe-choice reward', St.adult.tavern.state === 2 && St.adult.tavern.choice === 'home' && St.player.gold === goldT + 90);
+    t.w.close();
+    /* Main story still works with adult mode ON. */
+    const m = fresh(); const Sm = play(m.w, m.E); m.E.verifyAdult(cy - 30, true);
+    const maraM = m.E.NPCS_ref.find(n => n.role === 'elder'); near(m.E, maraM.x, maraM.y); m.E.doInteract(); m.$('dlg-actions').querySelector('button').click();
+    check('adult: main quest still accepts with adult mode ON', Sm.quests.main.stage === 1);
+    m.w.close();
+    /* Save/load persistence + birth-year privacy + corrupt-save default OFF. */
+    const s = fresh(); const Ss = play(s.w, s.E); s.E.verifyAdult(1995, true);
+    check('adult: save writes the boolean flag (adultVerified) and no birth year', (() => { s.E.saveGame(); const raw = s.w.localStorage.getItem(s.E.SAVE_KEY); return raw.includes('adultVerified') && !raw.includes('1995'); })());
+    Ss.adult.adultVerified = false;
+    check('adult: load restores the verified flag', s.E.loadGame() === true && s.E.isAdultMode() === true);
+    const rawSave = JSON.parse(s.w.localStorage.getItem(s.E.SAVE_KEY)); rawSave.adult = 'corrupt-not-an-object'; s.w.localStorage.setItem(s.E.SAVE_KEY, JSON.stringify(rawSave));
+    check('adult: corrupt adult save data defaults to OFF without crashing', s.E.loadGame() === true && s.E.isAdultMode() === false);
+    s.w.close();
+    /* New games default OFF. */
+    const n = fresh(); play(n.w, n.E);
+    check('adult: new game defaults to OFF', n.E.isAdultMode() === false && n.E.state.adult.adultVerified === false);
+    n.w.close();
+  }
+  /* --- Responsive UI / touch targets (static CSS + DOM checks) --- */
+  {
+    const css = fs.readFileSync(path.join(ROOT, 'css/style.css'), 'utf8');
+    const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+    check('ui: mobile breakpoint (~480px) present', css.includes('@media (max-width:480px)') || css.includes('@media (max-width: 480px)'));
+    check('ui: tablet breakpoint (~768px) present', css.includes('@media (max-width:768px)') || css.includes('@media (max-width: 768px)'));
+    check('ui: short-landscape breakpoint present', css.includes('@media (max-height:520px)') || css.includes('@media (max-height: 520px)'));
+    check('ui: touch targets are >=44px (mini buttons + big buttons)', /min-height:44px/.test(css) && /min-height:48px/.test(css));
+    check('ui: dialogue box is scrollable (max-height + overflow)', css.includes('.dialogue') && /max-height:[0-9]+dvh/.test(css) && css.includes('overflow-y:auto'));
+    check('ui: shop and quest lists scroll inside their panels', css.includes('#shop-items') && css.includes('#quest-list') && css.includes('overflow-y:auto'));
+    check('ui: age gate, toggle and romance controls exist in the DOM', html.includes('id="screen-adult"') && html.includes('id="adult-birth-year"') && html.includes('id="adult-confirm"') && html.includes('id="btn-adult-title"') && html.includes('id="btn-adult-pause"') && html.includes('I am 21 or older'));
+    check('ui: age gate carries a plain-language content warning', html.includes('Content warning') && html.includes('romance between adults'));
+    check('ui: no separate inventory / world-map screens exist to audit (HUD potions + minimap only)', !html.includes('screen-inventory') && !html.includes('screen-worldmap') && !html.includes('screen-map'));
+    const { w, E, $ } = fresh(); play(w, E);
+    check('ui: touch joystick + buttons exist and are wired (existing behaviour)', !!$('joystick') && !!$('touch-attack') && !!$('touch-interact') && !!$('touch-potion'));
+    check('ui: adult gate opens from title wiring and closes back', (() => { E.openAdultGate(); const open = !$('screen-adult').classList.contains('hidden'); E.closeAdultGate(); return open && $('screen-adult').classList.contains('hidden'); })());
+    w.close();
+    const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+    check('free: README states play free with no account needed', /Play free/i.test(readme) && /no account/i.test(readme));
+    check('free: README keeps the 3D cross-link', readme.includes('https://armansoor.github.io/emberfall-3d/'));
+    check('free: no payment code added (no checkout/payment-provider strings in game code)', !/(stripe|paypal|checkout|credit card)/i.test(fs.readFileSync(path.join(ROOT, 'js/game.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')));
+    check('adult: README documents the 21+ mode and its age gate without graphic detail', readme.includes('21+') && readme.includes('age gate') && !/porn|graphic sexual/i.test(readme));
+  }
   console.log(`\n==== RESULT: ${passed} passed, ${failed} failed ====`);
   if (failures.length) console.log('Failures:\n - ' + failures.join('\n - '));
   process.exit(failed ? 1 : 0);
