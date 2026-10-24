@@ -1,8 +1,12 @@
 # 🔥 Emberfall — An Open World Adventure
 
+**▶ Play the game: https://armansoor.github.io/emberfall-open-world/**
+
 A complete, playable open-world RPG that runs entirely in the browser. No build step, no backend — just vanilla HTML, CSS and JavaScript on a Canvas engine.
 
 **Created by Abdur Rahman Mansoor · Built by Nyx / Muse**
+
+**Also try the 3D version: https://armansoor.github.io/emberfall-3d/**
 
 ## The Story
 
@@ -51,9 +55,9 @@ npm install jsdom   # once, anywhere on NODE_PATH
 node tests/e2e.js   # 65 checks
 ```
 
-## Note on GitHub Pages
+## GitHub Pages
 
-This repository is **private**. A GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) is included and deploys on every push to `main`. If your GitHub plan supports Pages for private repos, the game will be live at https://armansoor.github.io/emberfall-open-world/ — otherwise GitHub will not publish a private-repo Pages site on a free plan, and the repo would need to be made public for a public Pages URL. The game itself needs no hosting — any static file server works.
+This repository is **public**, and a GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) deploys it on every push to `main`. The game is live at **https://armansoor.github.io/emberfall-open-world/**.
 
 ## Project Layout
 
@@ -65,3 +69,7 @@ js/world.js     — world data: biomes, props/collision, NPCs, shards, enemy & s
 js/game.js      — game engine: movement, combat, quests, save/load, rendering, input
 tests/e2e.js    — scripted end-to-end playthrough tests
 ```
+
+## Also Try
+
+- **Emberfall 3D (Three.js, third-person, bigger world, more NPCs and quests): https://armansoor.github.io/emberfall-3d/**
